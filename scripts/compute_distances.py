@@ -4,9 +4,10 @@ import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from aeon.distances import dtw_pairwise_distance, ddtw_pairwise_distance, adtw_pairwise_distance
+from joblib import Parallel, delayed
 
 COLUMNS = [
-    # 'userAcceleration.x',
+    'userAcceleration.x',
     'userAcceleration.y',
     'userAcceleration.z',
 ]
@@ -42,21 +43,31 @@ if __name__ == '__main__':
     # Load the data
     data = pd.read_csv(args.input, index_col=0)
 
-    for col in tqdm(COLUMNS, desc='Computing distances'):
+    series = []
+
+    for col in tqdm(COLUMNS, desc='Extracting time series'):
         # TODO: da para paralelizar isso
         X = get_series(data, col)
 
         # Para teste
         # X = X[:2]
 
-        # Compute the distances
-        # TODO: no futuro trocar para outra variação do dtw
-        if args.distance == 'dtw':
-            distances = dtw_pairwise_distance(X)
-        elif args.distance == 'adtw':
-            distances = adtw_pairwise_distance(X)
-        elif args.distance == 'ddtw':
-            distances = ddtw_pairwise_distance(X)
-        
-        # Save the distances
+        series.append(X)
+
+    # TODO: no futuro trocar para outra variação do dtw
+    if args.distance == 'dtw':
+        distance_func = dtw_pairwise_distance
+    elif args.distance == 'adtw':
+        distance_func = adtw_pairwise_distance
+    elif args.distance == 'ddtw':
+        distance_func = ddtw_pairwise_distance
+
+    # Disparando  e computando as distâncias
+    print(f'- Dispatching {len(COLUMNS)} jobs.')
+    features_distances = Parallel(n_jobs=len(COLUMNS))(
+        delayed(distance_func)(series[i]) for i in range(len(series))
+    )   
+
+    # Salvando distancias
+    for distances, col in zip(features_distances, COLUMNS):
         np.save(output_folder / f"{col.replace('.', '-')}_distances.npy", distances)
