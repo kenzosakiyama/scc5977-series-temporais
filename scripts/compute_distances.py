@@ -91,4 +91,4 @@ if __name__ == '__main__':
     else:
         # computa apenas uma vez
         features_distances = distance_func(series)
-        np.save(output_folder / f"multivar_distances.npy", features_distances)
+        np.save(output_folder / f"{args.distance}_distances.npy", features_distances)
