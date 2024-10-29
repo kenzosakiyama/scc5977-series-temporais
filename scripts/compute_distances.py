@@ -15,6 +15,7 @@ COLUMNS = [
 def get_series(df: pd.DataFrame, column: str, multivar: bool = False) -> np.ndarray:
 
     X = []
+    y = []
 
     for label in df['act'].unique():
         for subj_id in df['id'].unique():
@@ -28,8 +29,10 @@ def get_series(df: pd.DataFrame, column: str, multivar: bool = False) -> np.ndar
                 X.append(
                     np.stack([filtered_df[col].values for col in COLUMNS])
                 )
+
+            y.append(label)
     
-    return X
+    return X, y
 
 if __name__ == '__main__':
 
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     series = []
     for col in tqdm(COLUMNS, desc='Extracting time series'):
         # TODO: da para paralelizar isso
-        X = get_series(data, col)
+        X, _ = get_series(data, col)
 
         # Para teste
         # X = X[:2]
