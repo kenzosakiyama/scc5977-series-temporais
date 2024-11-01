@@ -17,10 +17,10 @@ def standardize_series(series: np.array) -> np.array:
     
     mean = series.mean()
     std = series.std()
-
+    # print(mean, std)
     return (series - mean) / std
 
-def get_series(df: pd.DataFrame, column: str, multivar: bool = False) -> np.ndarray:
+def get_series(df: pd.DataFrame, column: str, multivar: bool = False, standardize: bool = True) -> np.ndarray:
 
     X = []
     y = []
@@ -31,13 +31,12 @@ def get_series(df: pd.DataFrame, column: str, multivar: bool = False) -> np.ndar
             act_mask = df['act'] == label
             filtered_df = df[subj_mask & act_mask].reset_index()
 
-
             if multivar:
                 X.append(
-                    np.stack([filtered_df[col].values for col in COLUMNS])
+                    np.stack([standardize_series(filtered_df[col].values) if standardize else filtered_df[col].values for col in COLUMNS])
                 )
             else:
-                X.append(filtered_df[column].values)
+                X.append(standardize_series(filtered_df[column].values) if standardize else filtered_df[column].values)
 
             y.append(label)
     
