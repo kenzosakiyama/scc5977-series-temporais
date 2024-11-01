@@ -6,11 +6,19 @@ from pathlib import Path
 from aeon.distances import dtw_pairwise_distance, ddtw_pairwise_distance, adtw_pairwise_distance
 from joblib import Parallel, delayed
 
+
 COLUMNS = [
     'userAcceleration.x',
     'userAcceleration.y',
     'userAcceleration.z',
 ]
+
+def standardize_series(series: np.array) -> np.array:
+    
+    mean = series.mean()
+    std = series.std()
+
+    return (series - mean) / std
 
 def get_series(df: pd.DataFrame, column: str, multivar: bool = False) -> np.ndarray:
 
@@ -23,12 +31,13 @@ def get_series(df: pd.DataFrame, column: str, multivar: bool = False) -> np.ndar
             act_mask = df['act'] == label
             filtered_df = df[subj_mask & act_mask].reset_index()
 
-            X.append(filtered_df[column].values)
 
             if multivar:
                 X.append(
                     np.stack([filtered_df[col].values for col in COLUMNS])
                 )
+            else:
+                X.append(filtered_df[column].values)
 
             y.append(label)
     
