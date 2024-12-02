@@ -59,9 +59,8 @@ if __name__ == '__main__':
     print(f'- Saving results to {output_folder}.')
     print(f'- Using {args.distance} distance.')
 
-    # Load the data
+    # carregando dados
     data = pd.read_csv(args.input, index_col=0)
-
 
     # cada elemento é um conjunto X de séries temporais
     series = []
@@ -81,8 +80,6 @@ if __name__ == '__main__':
             multivar_series.append(np.stack(values))
         series = multivar_series
 
-
-    # TODO: no futuro trocar para outra variação do dtw
     if args.distance == 'dtw':
         distance_func = dtw_pairwise_distance
     elif args.distance == 'adtw':
