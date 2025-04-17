@@ -78,6 +78,8 @@ if __name__ == '__main__':
     X = data['X']   
     y = data['y']
 
+    # expecsts data['X'] to be a list of np arrays, (n_examples, channels, length)
+
     multivar_X_processed = get_rocket_features(X)
 
     print(f'- Evaluating MultiMiniRocket')

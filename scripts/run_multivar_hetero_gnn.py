@@ -25,7 +25,12 @@ import pickle
 SEED = 2024
 K = 10
 K_NEIGHBORS = 5
-EPOCHS = 300
+EPOCHS = 700
+HIDDEN = 128
+LR = 0.001
+WD = 0.001
+DROPOUT = 0.6
+HEADS = 8
 
 class HeterogeneousGNN(torch.nn.Module):
 
@@ -39,13 +44,6 @@ class HeterogeneousGNN(torch.nn.Module):
 
     super().__init__()
 
-    # self.gnn1 = HGTConv(
-    #     in_channels, # dimensões das features
-    #     out_channels=hidden_channels,
-    #     heads=heads,
-    #     metadata=data.metadata(),
-    # )
-
     self.gnn1 = HANConv(
         in_channels, # dimensões das features
         out_channels=hidden_channels,
@@ -54,11 +52,20 @@ class HeterogeneousGNN(torch.nn.Module):
         dropout=dropout
     )
 
+    # self.gnn2 = HANConv(
+    #     hidden_channels, # dimensões das features
+    #     out_channels=hidden_channels,
+    #     heads=heads,
+    #     metadata=data.metadata(),
+    #     dropout=dropout
+    # )
+
     self.classifier = nn.Linear(len(data.metadata()[0])*hidden_channels, out_channels)
 
   def forward(self, X, edge_index):
 
     gnn_embds = self.gnn1(X, edge_index)
+    # gnn_embds = self.gnn2(gnn_embds, edge_index)
 
     # agregando via concatenação as features enriquecidas de todos os nós
     agg_embs = torch.concat([embs for embs in gnn_embds.values()], dim=1)
@@ -223,17 +230,17 @@ def evaluate_gnn_classifier(data: Data,
         model = HeterogeneousGNN(
             data,
             in_channels=data.x_dict['0'].shape[1], # dimensões das features), o canal '0' sempre existe 
-            hidden_channels=32,
+            hidden_channels=HIDDEN,
             layers=1, # nao modifica nd
-            dropout=0.5,
-            heads=4,
+            dropout=DROPOUT, #0.5
+            heads=HEADS,
             out_channels=n_labels
         )
 
         model.to(device)
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=1, epochs=EPOCHS, pct_start=0.1)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WD)
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=LR, steps_per_epoch=1, epochs=EPOCHS, pct_start=0.1)
 
         # laço de treino
         for epoch in tqdm(range(1, EPOCHS + 1), desc=f'Fold {i + 1} epochs'):
@@ -270,6 +277,7 @@ if __name__ == '__main__':
     with open(args.data, 'rb') as f:
         data = pickle.load(f)
 
+    # expecsts data['X'] to be a list of np arrays, (n_examples, channels, length)
     X = data['X']   
     y = data['y']
 
